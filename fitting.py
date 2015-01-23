@@ -117,11 +117,17 @@ def open_fits(dir):
   return hdrfits[1].data, datfits[1].data
 
 def main(args):
-  
-  summary = "PassAllCuts500.summary"
+  global _cacheDirectory
+  conf = {}
+  if isfile('config.py'):
+    from config import config
+    conf = config
+  summary = os.path.expanduser(conf['summary']) if 'summary' in conf else 'PassAllCuts500.summary'
   fro = -1
   to = -1
-  directory = "/home/kuhlmann/snana/root_v201204/SIM/DES_5years_CC_v1033f/"
+  directory = os.path.expanduser(conf['fitsDirectory']) if 'fitsDirectory' in conf else '/home/kuhlmann/snana/root_v201204/SIM/DES_5years_CC_v1033f/'
+  if 'cacheDirectory' in conf:
+    _cacheDirectory = os.path.expanduser(conf['cacheDirectory'])
 
   parser = argparse.ArgumentParser(description='Analyze SN Data Simulated from SNANA')
   parser.add_argument('-f', '--fro', type=int, nargs=1, help="from where")

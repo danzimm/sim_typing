@@ -9,6 +9,7 @@ import sncosmo
 from sncosmo.photdata import standardize_data
 from sncosmo.fitting import _nest_lc
 from collections import OrderedDict as odict
+from os.path import join, isfile
 
 models = odict()
 amplitude0 = {}
@@ -70,10 +71,16 @@ for name, sntype in [('s11-2004hx', 'SN IIL/P'),
                   'bounds': bounds,
                   'tied': tied}
 
+templatedir = '/fusion/gpfs/home/kuhlmann/snana/root_v201204/snsed/non1a/'
+
+if isfile("config.py"):
+  from config import config
+  templatedir = os.path.expanduser(config['templateDirectory']) if 'templateDirectory' in config else templatedir
+
 for name, type, file in [
-    ("CSP-2006ep", "SN Ib", "/fusion/gpfs/home/kuhlmann/snana/root_v201204/snsed/non1a/CSP-2006ep.SED"),
-    ("SDSS-017548", "SN Ib", "/fusion/gpfs/home/kuhlmann/snana/root_v201204/snsed/non1a/SDSS-017548.SED"),
-    ("SDSS-000018", "SN IIP", "/fusion/gpfs/home/kuhlmann/snana/root_v201204/snsed/non1a/SDSS-000018.SED")
+    ("CSP-2006ep", "SN Ib", join(templatedir, 'CSP-2006ep.SED')),
+    ("SDSS-017548", "SN Ib", join(templatedir, 'SDSS-017548.SED')),
+    ("SDSS-000018", "SN IIP", join(templatedir, 'SDSS-000018.SED'))
     ]:
   phase, wave, flux = sncosmo.io.read_griddata_ascii(file)
   min = np.min(wave)
