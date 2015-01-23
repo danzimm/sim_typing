@@ -9,6 +9,10 @@ import argparse
 from modelmap import *
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+from astropy.io import fits
+import sncosmo
+from astropy.table import Table
 
 _cacheDirectory = "./.cache"
 
@@ -136,21 +140,82 @@ def filter_probabilities(probs, corrects, incorrects, greater, cutoff):
 def print_prob_info(probs):
   for snid, prob in probs.iteritems():
     print "\tLooking at {}:".format(snid)
-    #print "\t\tMeta information:"
-    #meta = prob['meta']
-    #for key in meta.array.names:
-    #  print "\t\t\t{}: {}".format(key, meta[key])
+    print "\t\tMeta information:"
+    meta = prob['meta']
+    for key in meta.array.names:
+      print "\t\t\t{}: {}".format(key, meta[key])
     print "\t\tOther information:"
     for key, val in prob.iteritems():
       if key == 'meta':
         continue
       print "\t\t\t{}: {}".format(key, val)
 
+def print_snids(datas):
+  for snid, val, in datas.iteritems():
+    print snid
+
+def count_zero_prob(probs):
+  zeros = 0
+  for snid, prob in probs.iteritems():
+    for key, val in prob.iteritems():
+      if key == 'meta' or key == 'correct' or key == 'ordered':
+        continue
+      if val == 0.0:
+        zeros += 1
+        break
+  print "Got {} / {} zeros".format(zeros, len(probs))
+
+def open_fits(dir):
+  fitsfiles = [f for f in listdir(dir) if isfile(join(dir, f)) and f.lower().endswith('.fits')]
+  headfile = photfile = None
+  heads = [f for f in fitsfiles if os.path.splitext(f)[0].lower().endswith("head")]
+  phots = [f for f in fitsfiles if os.path.splitext(f)[0].lower().endswith("phot")]
+  if len(heads) == 0:
+    raise Exception('Could not find metadata \'head\' file in {0}'.format(dir))
+  if len(phots) == 0:
+    raise Exception('Could not find data \'head\' file in {0}'.format(dir))
+  hdrfits = fits.open(join(dir, heads[0]))
+  datfits = fits.open(join(dir, phots[0]))
+  filterdir = [f for f in listdir(dir) if not isfile(join(dir, f)) and f.lower().endswith('.filters')][0]
+  banddir = join(dir, filterdir)
+  for name in ['g', 'r', 'i', 'z']:
+    filename = os.path.join(banddir, name + '.dat')
+    band = sncosmo.read_bandpass(filename, name=name)
+    sncosmo.registry.register(band, force=True)
+  return hdrfits[1].data, datfits[1].data
+
+def load_snid_data(snid, directory):
+  metas, datas = open_fits(directory)
+  meta = [m for m in metas if int(m['SNID']) == int(snid)][0]
+  return datas[(meta['PTROBS_MIN'] - 1):meta['PTROBS_MAX']]
+
+def plot_lc(snid, directory, show, outname):
+  dat = load_snid_data(snid, directory)
+  dat['FLT'][:] = np.char.strip(dat['FLT'])
+  data = Table(dat)
+  data.rename_column('FLUXCAL', 'flux')
+  data.rename_column('FLUXCALERR', 'fluxerr')
+  data.rename_column('FLT', 'band')
+  data.rename_column('MJD', 'time')
+  data['zp'] = 27.5
+  data['zpsys'] = 'ab'
+  fig = sncosmo.plot_lc(data)
+  if show:
+    plt.show()
+  else:
+    fig.savefig(outname, dpi=300)
 
 def main(args):
   include_special = True
   show = False
   outname = 'out.png'
+  
+  conf = {}
+  if isfile('config.py'):
+    from config import config
+    conf = config
+  directory = os.path.expanduser(conf['fitsDirectory']) if 'fitsDirectory' in conf else '/home/kuhlmann/snana/root_v201204/SIM/DES_5years_CC_v1033f/'
+
   parser = argparse.ArgumentParser(description='Analyze SN Data Simulated from SNANA and fit with SNCosmo')
   parser.add_argument('-x', '--extra', action='store_const', const=False, default=True, help="exclude extra templates in analysis")
   parser.add_argument('-s', '--show', action='store_const', const=True, default=False, help="show plot instead of saving")
@@ -161,16 +226,20 @@ def main(args):
   outname = opts.out[0]
   data = load_data()
   chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect = analyze_data(data, include_special)
+  lowprobs = filter_probabilities(probs, False, True, True, 0.5)
+
   #plot_types(lowestchisqdofs, show, outname)
   #plot_types(lowestcorrect, show, outname)
   #plot_types(lowestincorrect, show, outname)
   #histo_probs(probs, show, outname)
   #histo_chisqdiff(chisqdofs, show, outname)
   #histo_probdiff(probs, show, outname)
-  lowprobs = filter_probabilities(probs, False, True, True, 0.5)
   #histo_probdiff(lowprobs, show, outname)
   #print "Probability info for SN with false typing with diff > 50%:"
-  print_prob_info(probs)
+  #print_prob_info(probs)
+  snids = [snid for snid, val in lowprobs.iteritems()]
+  for snid in snids:
+    plot_lc(snid, directory, show, outname)
 
 if __name__ == "__main__":
   main(sys.argv[1:])
