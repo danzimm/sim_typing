@@ -2,11 +2,13 @@
 import sys
 from scipy import stats
 from os import listdir
-from os.path import join
+from os.path import join, isfile
 from astropy.io.misc import fnunpickle
 from modeldefs import models
 import argparse
 from modelmap import *
+import matplotlib.pyplot as plt
+import numpy as np
 
 _cacheDirectory = "./.cache"
 
@@ -20,7 +22,7 @@ def analyze_data(data, include_specials):
   for results in data:
     if not include_specials:
       for special in specials():
-        results.pop(special)
+        results.pop(special, None)
     meta = results['meta']
     chisqbundle = {}
     probbundle = {}
@@ -29,13 +31,13 @@ def analyze_data(data, include_specials):
         continue
       chisq = result['chisq']
       dof = result['ndof']
-      chisqdof = results['chisqdof']
+      chisqdof = result['chisqdof']
       prob = chisqdof_to_prob(chisq, dof)
       chisqbundle[name] = chisqdof
       probbundle[name] = prob
 
     lowchi = sorted([[name, chisqdof] for name, chisqdof in chisqbundle.iteritems()],
-                    cmp = lambda a,b: a[1] - b[1])[0]
+                    cmp = lambda a,b: -1 if a[1] - b[1] < 0 else (0 if a[1] == b[1] else 1))[0]
     chisqbundle['lowest'] = name
     probbundle['lowest'] = name
     chisqdofs[meta['SNID']] = chisqbundle
@@ -47,7 +49,7 @@ def analyze_data(data, include_specials):
   return chisqdofs, probs, lowestchisqdofs
 
 def load_data():
-  files = [f for f in listdir(dir) if isfile(join(dir, f)) and f.lower().endswith('.pik')]
+  files = [f for f in listdir(_cacheDirectory) if isfile(join(_cacheDirectory, f)) and f.lower().endswith('.pik')]
   return [fnunpickle(join(_cacheDirectory, file)) for file in files]
 
 def plot_types(lowestchisqdofs, show, outname):
@@ -57,18 +59,18 @@ def plot_types(lowestchisqdofs, show, outname):
     if type not in types:
       types.append(type)
   data = [0 for type in types]
-  for name, val in lowestchisqdofs:
+  for name, val in lowestchisqdofs.iteritems():
     type = type_for_name(name)
-    if type == 'SN IIP':
-      data[types.indexOf('SN IIP')] += val
-    data[types.indexOf(type)] += val
+    #if type == 'SN IIP':
+    #  data[types.index('SN IIL/P')] += val
+    data[types.index(type)] += val
 
   fig, ax = plt.subplots()
   width = 0.35
   ind = np.arange(len(types))
-  ax.bar(ind, data, width, color='#8ef3af')
+  ax.bar(ind, data, width, color='#418654')
   ax.set_ylabel('# SN')
-  ax.set_xticks(ind+width)
+  ax.set_xticks(ind+(width/2))
   ax.set_xticklabels(types)
   if show:
     plt.show()

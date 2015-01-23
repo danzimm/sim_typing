@@ -70,7 +70,11 @@ for name, sntype in [('s11-2004hx', 'SN IIL/P'),
                   'bounds': bounds,
                   'tied': tied}
 
-for name, type, file in [("CSP-2006ep", "Ib", "/fusion/gpfs/home/kuhlmann/snana/root_v201204/snsed/non1a/CSP-2006ep.SED")]:
+for name, type, file in [
+    ("CSP-2006ep", "SN Ib", "/fusion/gpfs/home/kuhlmann/snana/root_v201204/snsed/non1a/CSP-2006ep.SED"),
+    ("SDSS-017548", "SN Ib", "/fusion/gpfs/home/kuhlmann/snana/root_v201204/snsed/non1a/SDSS-017548.SED"),
+    ("SDSS-000018", "SN IIP", "/fusion/gpfs/home/kuhlmann/snana/root_v201204/snsed/non1a/SDSS-000018.SED")
+    ]:
   phase, wave, flux = sncosmo.io.read_griddata_ascii(file)
   min = np.min(wave)
   max = np.max(wave)
@@ -105,7 +109,7 @@ for name, type, file in [("CSP-2006ep", "Ib", "/fusion/gpfs/home/kuhlmann/snana/
   tied = {'amplitude': lambda d: amplitude0[name] *
           10.**(-0.4 * (d['mabs'] + dm(d['z'])))}
 
-  models[name] = {'type': sntype,
+  models[name] = {'type': type,
                   'mprior': 0.5/8.,
                   'model': model,
                   'param_names': ['z', 't0', 'amplitude', 'hostebv'], # print out these params from pickle

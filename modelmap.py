@@ -15,13 +15,13 @@ def type_for_name(name):
 
 def model_names():
   return [
-      'salt2-extended',
       's11-2004hx',
-      's11-2005lc',
+      's11-2006fo',
       's11-2005hl',
+      'salt2-extended',
+      's11-2005lc',
       's11-2005hm',
       's11-2005gi',
-      's11-2006fo',
       's11-2006jo',
       's11-2006jl',
       'CSP-2006ep'
@@ -29,5 +29,7 @@ def model_names():
 
 def specials():
   return [
-      'CSP-2006ep'
+      'CSP-2006ep',
+      'SDSS-017548',
+      'SDSS-000018'
   ]

@@ -42,7 +42,6 @@ def fit_and_save(metas, datas):
     pikname = join(_cacheDirectory, meta['SNID']) + '.pik'
     if os.path.exists(pikname):
       results = fnunpickle(pikname)
-      continue
 
     print "Fitting " + meta['SNID']
 
