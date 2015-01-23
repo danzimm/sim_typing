@@ -51,24 +51,64 @@ for name, sntype in [('s11-2004hx', 'SN IIL/P'),
                      ('s11-2006fo', 'SN Ic'),
                      ('s11-2006jo', 'SN Ib'),
                      ('s11-2006jl', 'SN IIP')]:
-    model = sncosmo.Model(source=name,
-                          effects=[dust, dust],
-                          effect_names=['host', 'mw'],
-                          effect_frames=['rest', 'obs'])
-    bounds = {'hostebv': (-0.2, 0.5), 'z': (0.001, 1.2),
-               'mabs':(-16., -20.)}
+  model = sncosmo.Model(source=name,
+                        effects=[dust, dust],
+                        effect_names=['host', 'mw'],
+                        effect_frames=['rest', 'obs'])
+  bounds = {'hostebv': (-0.2, 0.5), 'z': (0.001, 1.2),
+            'mabs':(-16., -20.)}
 
-    model.source.set_peakmag(0., 'bessellb', 'ab')
-    amplitude0[name] = model.get('amplitude')
-    tied = {'amplitude': lambda d: amplitude0[name] *
-            10.**(-0.4 * (d['mabs'] + dm(d['z'])))}
+  model.source.set_peakmag(0., 'bessellb', 'ab')
+  amplitude0[name] = model.get('amplitude')
+  tied = {'amplitude': lambda d: amplitude0[name] *
+          10.**(-0.4 * (d['mabs'] + dm(d['z'])))}
 
-    models[name] = {'type': sntype,
-                    'mprior': 0.5/8.,
-                    'model': model,
-                    'param_names': ['z', 't0', 'amplitude', 'hostebv'], # print out these params from pickle
-                    'bounds': bounds,
-                    'tied': tied}
+  models[name] = {'type': sntype,
+                  'mprior': 0.5/8.,
+                  'model': model,
+                  'param_names': ['z', 't0', 'amplitude', 'hostebv'], # print out these params from pickle
+                  'bounds': bounds,
+                  'tied': tied}
 
+for name, type, file in [("CSP-2006ep", "Ib", "/fusion/gpfs/home/kuhlmann/snana/root_v201204/snsed/non1a/CSP-2006ep.SED")]:
+  phase, wave, flux = sncosmo.io.read_griddata_ascii(file)
+  min = np.min(wave)
+  max = np.max(wave)
+  if min > 1000:
+    padding = np.arange(1000.0, min, 10.0)
+    fluxpad = np.zeros(len(padding))
+    wave = np.append(padding, wave)
+    newflux = []
+    for f in flux:
+      newflux.append(np.concatenate((fluxpad, f)))
+    flux = np.array(newflux)
+  if max < 14900:
+    padding = np.arange(max+10.0, 14910.0, 10.0)
+    fluxpad = np.zeros(len(padding))
+    wave = np.append(wave, padding)
+    newflux = []
+    for f in flux:
+      newflux.append(np.concatenate((f, fluxpad)))
+    flux = np.array(newflux)
 
+  timeSeries = sncosmo.TimeSeriesSource(phase, wave, flux)
+  model = sncosmo.Model(source=timeSeries,
+                        effects=[dust, dust],
+                        effect_names=['host', 'mw'],
+                        effect_frames=['rest', 'obs'])
 
+  bounds = {'hostebv': (-0.2, 0.5), 'z': (0.001, 1.2),
+            'mabs':(-16., -20.)}
+
+  model.source.set_peakmag(0., 'bessellb', 'ab')
+  amplitude0[name] = model.get('amplitude')
+  tied = {'amplitude': lambda d: amplitude0[name] *
+          10.**(-0.4 * (d['mabs'] + dm(d['z'])))}
+
+  models[name] = {'type': sntype,
+                  'mprior': 0.5/8.,
+                  'model': model,
+                  'param_names': ['z', 't0', 'amplitude', 'hostebv'], # print out these params from pickle
+                  'bounds': bounds,
+                  'tied': tied}
+ 

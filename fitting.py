@@ -20,6 +20,10 @@ def load_summary(file):
 def filter_meta(meta, fro, to, summary):
   snids = load_summary(summary)
   metas = [met for met in meta if int(met['SNID']) in snids]
+  if fro == -1:
+    fro = 0
+  if to == -1:
+    to = len(metas)+1
   metas = metas[fro:to]
   return metas
 
