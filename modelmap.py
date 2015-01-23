@@ -10,7 +10,9 @@ def type_for_name(name):
       's11-2006fo': 'SN Ic',
       's11-2006jo': 'SN Ib',
       's11-2006jl': 'SN IIP',
-      'CSP-2006ep': 'SN Ib'
+      'CSP-2006ep': 'SN Ib',
+      'SDSS-017548': 'SN Ic',
+      'SDSS-000018': 'SN IIP'
   }[name]
 
 def model_names():
