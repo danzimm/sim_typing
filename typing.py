@@ -15,10 +15,19 @@ _cacheDirectory = "./.cache"
 def chisqdof_to_prob(chisq, dof):
   return 1 - stats.chi2.cdf(chisq, dof)
 
+def sntypes_equiv(typea, typeb):
+  typea = typea.replace('SN ', '')
+  typeb = typeb.replace('SN ', '')
+  if typea == 'IIL/P' and (typeb == 'IIP' or typeb == 'IIL'):
+    return True
+  return typea == typeb
+
 def analyze_data(data, include_specials):
   chisqdofs = {}
   probs = {}
   lowestchisqdofs = {}
+  lowestcorrect = {}
+  lowestincorrect = {}
   for results in data:
     if not include_specials:
       for special in specials():
@@ -36,17 +45,30 @@ def analyze_data(data, include_specials):
       chisqbundle[name] = chisqdof
       probbundle[name] = prob
 
-    lowchi = sorted([[name, chisqdof] for name, chisqdof in chisqbundle.iteritems()],
-                    cmp = lambda a,b: -1 if a[1] - b[1] < 0 else (0 if a[1] == b[1] else 1))[0]
-    chisqbundle['lowest'] = name
-    probbundle['lowest'] = name
+    orderedchis = sorted([[name, chisqdof] for name, chisqdof in chisqbundle.iteritems()],
+                         cmp = lambda a,b: -1 if a[1] - b[1] < 0 else (0 if a[1] == b[1] else 1))
+    orderedprobs = sorted([[name, prob] for name, prob in probbundle.iteritems()],
+                          cmp = lambda a,b: 1 if a[1] - b[1] < 0 else (0 if a[1] == b[1] else -1))
+    lowchi = orderedchis[0]
+    realtype = meta['SIM_TYPE_NAME']
+    correctlytyped = sntypes_equiv(realtype, lowchi[0])
+    chisqbundle['correct'] = probbundle['correct'] = correctlytyped
+    chisqbundle['ordered'] = orderedchis
+    probbundle['ordered'] = orderedprobs
+    chisqbundle['meta'] = probbundle['meta'] = meta
     chisqdofs[meta['SNID']] = chisqbundle
     probs[meta['SNID']] = probbundle
     if lowchi[0] in lowestchisqdofs:
       lowestchisqdofs[lowchi[0]] += 1
     else:
       lowestchisqdofs[lowchi[0]] = 1
-  return chisqdofs, probs, lowestchisqdofs
+    adder = lowestcorrect if correctlytyped else lowestincorrect
+    if lowchi[0] in adder:
+      adder[lowchi[0]] += 1
+    else:
+      adder[lowchi[0]] = 1
+
+  return chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect
 
 def load_data():
   files = [f for f in listdir(_cacheDirectory) if isfile(join(_cacheDirectory, f)) and f.lower().endswith('.pik')]
@@ -75,7 +97,55 @@ def plot_types(lowestchisqdofs, show, outname):
   if show:
     plt.show()
   else:
-    plt.savefig(outname)
+    plt.savefig(outname, dpi=300)
+
+def histo_probs(probs, show, outname):
+  lowestprobs = [prob['ordered'][0][1] for snid, prob in probs.iteritems()]
+  histodata(lowestprobs, 'Probability', '# SN', show, outname)
+
+def histo_chisqdiff(chisqs, show, outname):
+  toptwodiff = [chisq['ordered'][1][1] - chisq['ordered'][0][1] for snid, chisq in chisqs.iteritems()]
+  histodata(toptwodiff, 'Difference in top two chisq/dof', '# SN', show, outname)
+
+def histo_probdiff(probs, show, outname):
+  toptwodiff = [prob['ordered'][0][1] - prob['ordered'][1][1] for snid, prob in probs.iteritems()]
+  histodata(toptwodiff, 'Difference in top two probabilities', '# SN', show, outname)
+
+def histodata(data, xl, yl, show, outname):
+  fig, ax = plt.subplots()
+  ax.hist(data, 30, color='#418654')
+  ax.set_ylabel(yl)
+  ax.set_xlabel(xl)
+  if show:
+    plt.show()
+  else:
+    plt.savefig(outname, dpi=300)
+
+def filter_probabilities(probs, corrects, incorrects, greater, cutoff):
+  cutter = (lambda x: x >= cutoff) if greater else (lambda y: y <= cutoff)
+  retval = {}
+  for snid, prob in probs.iteritems():
+    if not cutter(prob['ordered'][0][1] - prob['ordered'][1][1]):
+      continue
+    if prob['correct'] and corrects:
+      retval[snid] = prob
+    elif not prob['correct'] and incorrects:
+      retval[snid] = prob
+  return retval
+
+def print_prob_info(probs):
+  for snid, prob in probs.iteritems():
+    print "\tLooking at {}:".format(snid)
+    #print "\t\tMeta information:"
+    #meta = prob['meta']
+    #for key in meta.array.names:
+    #  print "\t\t\t{}: {}".format(key, meta[key])
+    print "\t\tOther information:"
+    for key, val in prob.iteritems():
+      if key == 'meta':
+        continue
+      print "\t\t\t{}: {}".format(key, val)
+
 
 def main(args):
   include_special = True
@@ -88,10 +158,19 @@ def main(args):
   opts = parser.parse_args(args)
   include_special = opts.extra
   show = opts.show
-  outname = opts.out
+  outname = opts.out[0]
   data = load_data()
-  chisqdofs, probs, lowestchisqdofs = analyze_data(data, include_special)
-  plot_types(lowestchisqdofs, show, outname)
+  chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect = analyze_data(data, include_special)
+  #plot_types(lowestchisqdofs, show, outname)
+  #plot_types(lowestcorrect, show, outname)
+  #plot_types(lowestincorrect, show, outname)
+  #histo_probs(probs, show, outname)
+  #histo_chisqdiff(chisqdofs, show, outname)
+  #histo_probdiff(probs, show, outname)
+  lowprobs = filter_probabilities(probs, False, True, True, 0.5)
+  #histo_probdiff(lowprobs, show, outname)
+  #print "Probability info for SN with false typing with diff > 50%:"
+  print_prob_info(probs)
 
 if __name__ == "__main__":
   main(sys.argv[1:])
