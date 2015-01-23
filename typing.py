@@ -75,7 +75,7 @@ def plot_types(lowestchisqdofs, show, outname):
   if show:
     plt.show()
   else:
-    savefig(outname)
+    plt.savefig(outname)
 
 def main(args):
   include_special = True
