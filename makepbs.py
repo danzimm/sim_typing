@@ -58,6 +58,7 @@ def parseArgs(args):
   pbsfile = '.fitting.pbs'
   cmdlist = '.fitting.list'
   workingDirectory = '/lcrc/project/Supernova_DES/sim_typing/'
+  cache = './.cache/'
   logDirectory = './.cache/.logs'
   summaryFile = './PassAllCuts500.summary'
   scriptName = './fitting.py'
