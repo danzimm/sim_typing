@@ -89,6 +89,11 @@ def fit_and_save(metas, datas):
                      bounds=m['bounds'], tied=m['tied'], nobj=50, verbose=False)
       res.chisq = -2. * res.loglmax
       res.chisqdof = res.chisq / res.ndof
+      res.param_dict = dict(zip(m['model'].param_names,
+                                  m['model'].parameters))
+      res.param_names = m['model'].param_names
+      res.mprior = m['mprior']
+      res.type = m['type']
       results[name] = res
     
     fnpickle(results, pikname)
