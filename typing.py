@@ -13,6 +13,7 @@ import os
 from astropy.io import fits
 import sncosmo
 from astropy.table import Table
+from snutils import open_sim_fits
 
 _cacheDirectory = "./.cache"
 
@@ -165,27 +166,8 @@ def count_zero_prob(probs):
         break
   print "Got {} / {} zeros".format(zeros, len(probs))
 
-def open_fits(dir):
-  fitsfiles = [f for f in listdir(dir) if isfile(join(dir, f)) and f.lower().endswith('.fits')]
-  headfile = photfile = None
-  heads = [f for f in fitsfiles if os.path.splitext(f)[0].lower().endswith("head")]
-  phots = [f for f in fitsfiles if os.path.splitext(f)[0].lower().endswith("phot")]
-  if len(heads) == 0:
-    raise Exception('Could not find metadata \'head\' file in {0}'.format(dir))
-  if len(phots) == 0:
-    raise Exception('Could not find data \'head\' file in {0}'.format(dir))
-  hdrfits = fits.open(join(dir, heads[0]))
-  datfits = fits.open(join(dir, phots[0]))
-  filterdir = [f for f in listdir(dir) if not isfile(join(dir, f)) and f.lower().endswith('.filters')][0]
-  banddir = join(dir, filterdir)
-  for name in ['g', 'r', 'i', 'z']:
-    filename = os.path.join(banddir, name + '.dat')
-    band = sncosmo.read_bandpass(filename, name=name)
-    sncosmo.registry.register(band, force=True)
-  return hdrfits[1].data, datfits[1].data
-
 def load_snid_data(snid, directory):
-  metas, datas = open_fits(directory)
+  metas, datas = open_sim_fits(directory)
   meta = [m for m in metas if int(m['SNID']) == int(snid)][0]
   return datas[(meta['PTROBS_MIN'] - 1):meta['PTROBS_MAX']]
 

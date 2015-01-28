@@ -7,15 +7,11 @@ from astropy.io.misc import fnpickle, fnunpickle
 import sncosmo
 from modeldefs import models
 from sncosmo.fitting import _nest_lc
-from astropy.io import fits
 import os
-from os import listdir
-from os.path import isfile, join, splitext
+from os.path import isfile, join
+from snutils import load_summary, open_sim_fits
 
 _cacheDirectory = './.cache'
-
-def load_summary(file):
-  return [int(sn) for sn in np.genfromtxt(file, usecols=(2), dtype=None)]
 
 def filter_meta(meta, fro, to, summary):
   snids = load_summary(summary)
@@ -97,25 +93,6 @@ def fit_and_save(metas, datas):
     
     fnpickle(results, pikname)
 
-def open_fits(dir):
-  fitsfiles = [f for f in listdir(dir) if isfile(join(dir, f)) and f.lower().endswith('.fits')]
-  headfile = photfile = None
-  heads = [f for f in fitsfiles if splitext(f)[0].lower().endswith("head")]
-  phots = [f for f in fitsfiles if splitext(f)[0].lower().endswith("phot")]
-  if len(heads) == 0:
-    raise Exception('Could not find metadata \'head\' file in {0}'.format(dir))
-  if len(phots) == 0:
-    raise Exception('Could not find data \'head\' file in {0}'.format(dir))
-  hdrfits = fits.open(join(dir, heads[0]))
-  datfits = fits.open(join(dir, phots[0]))
-  filterdir = [f for f in listdir(dir) if not isfile(join(dir, f)) and f.lower().endswith('.filters')][0]
-  banddir = join(dir, filterdir)
-  for name in ['g', 'r', 'i', 'z']:
-    filename = os.path.join(banddir, name + '.dat')
-    band = sncosmo.read_bandpass(filename, name=name)
-    sncosmo.registry.register(band)
-  return hdrfits[1].data, datfits[1].data
-
 def main(args):
   global _cacheDirectory
   conf = {}
@@ -143,7 +120,7 @@ def main(args):
     directory = opts.dir[0]
   if opts.summary is not None:
     summary = opts.summary[0]
-  meta, data = open_fits(directory)
+  meta, data = open_sim_fits(directory)
   meta = filter_meta(meta, fro, to, summary)
   if not os.path.exists(_cacheDirectory):
     os.makedirs(_cacheDirectory)

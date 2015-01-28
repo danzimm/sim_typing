@@ -5,3 +5,5 @@ figures
 *.summary
 *.swp
 config.py
+*.pbs
+*.list
