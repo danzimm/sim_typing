@@ -24,7 +24,7 @@ def open_sim_fits(dir):
   for name in ['g', 'r', 'i', 'z']:
     filename = join(banddir, name + '.dat')
     band = sncosmo.read_bandpass(filename, name=name)
-    sncosmo.registry.register(band)
+    sncosmo.registry.register(band, force=True)
   meta = hdrfits[1].data
   data = datfits[1].data
   hdrfits.close()

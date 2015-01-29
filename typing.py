@@ -23,7 +23,7 @@ def chisqdof_to_prob(chisq, dof):
 def sntypes_equiv(typea, typeb):
   typea = typea.replace('SN ', '')
   typeb = typeb.replace('SN ', '')
-  if typea == 'IIL/P' and (typeb == 'IIP' or typeb == 'IIL'):
+  if (typea == 'IIL/P' and (typeb == 'IIP' or typeb == 'IIL')) or (typeb == 'IIL/P' and (typea == 'IIP' or typea == 'IIL')):
     return True
   return typea == typeb
 
@@ -56,7 +56,7 @@ def analyze_data(data, include_specials):
                           cmp = lambda a,b: 1 if a[1] - b[1] < 0 else (0 if a[1] == b[1] else -1))
     lowchi = orderedchis[0]
     realtype = meta['SIM_TYPE_NAME']
-    correctlytyped = sntypes_equiv(realtype, lowchi[0])
+    correctlytyped = sntypes_equiv(realtype, type_for_name(lowchi[0]))
     chisqbundle['correct'] = probbundle['correct'] = correctlytyped
     chisqbundle['ordered'] = orderedchis
     probbundle['ordered'] = orderedprobs
@@ -134,7 +134,7 @@ def filter_probabilities(probs, corrects, incorrects, greater, cutoff):
       continue
     if prob['correct'] and corrects:
       retval[snid] = prob
-    elif not prob['correct'] and incorrects:
+    elif (not prob['correct']) and incorrects:
       retval[snid] = prob
   return retval
 
@@ -171,7 +171,11 @@ def load_snid_data(snid, directory):
   meta = [m for m in metas if int(m['SNID']) == int(snid)][0]
   return datas[(meta['PTROBS_MIN'] - 1):meta['PTROBS_MAX']]
 
-def plot_lc(snid, directory, show, outname):
+def plot_lc(snid, directory, show, outname, result, mms):
+  bestname = mms[0]
+  ms = [m for m in mms if m in models] # used to eliminate errors
+  print "Plotting {} on {}{}".format(ms, snid, (" instead of " + str(mms) + " because the required models aren't loaded" if len(mms) != len(ms) else ""))
+  mods = [(m, models[m]['model']) for m in ms]
   dat = load_snid_data(snid, directory)
   dat['FLT'][:] = np.char.strip(dat['FLT'])
   data = Table(dat)
@@ -181,7 +185,13 @@ def plot_lc(snid, directory, show, outname):
   data.rename_column('MJD', 'time')
   data['zp'] = 27.5
   data['zpsys'] = 'ab'
-  fig = sncosmo.plot_lc(data)
+  for m, mod in mods:
+    res = result[m]
+    mod.set(**res['param_dict'])
+    idx = np.argmax(res['logl'])
+    parameters = res['samples'][idx]
+    mod.set(**dict(zip(res['param_names'], parameters)))
+  fig = sncosmo.plot_lc(data, [mod for m, mod in mods])
   if show:
     plt.show()
   else:
@@ -208,7 +218,7 @@ def main(args):
   outname = opts.out[0]
   data = load_data()
   chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect = analyze_data(data, include_special)
-  lowprobs = filter_probabilities(probs, False, True, True, 0.5)
+  lowprobs = filter_probabilities(probs, False, True, True, 0.1)
 
   #plot_types(lowestchisqdofs, show, outname)
   #plot_types(lowestcorrect, show, outname)
@@ -218,10 +228,13 @@ def main(args):
   #histo_probdiff(probs, show, outname)
   #histo_probdiff(lowprobs, show, outname)
   #print "Probability info for SN with false typing with diff > 50%:"
-  #print_prob_info(probs)
+  #print_prob_info(lowprobs)
+  if not os.path.exists("figures"):
+    os.mkdir("figures")
   snids = [snid for snid, val in lowprobs.iteritems()]
   for snid in snids:
-    plot_lc(snid, directory, show, outname)
+    result = [dat for dat in data if int(dat['meta']['SNID']) == int(snid)][0]
+    plot_lc(snid, directory, False, "figures/{}.png".format(snid), result, [lowprobs[snid]['ordered'][0][0], SNANAidx_to_model(lowprobs[snid]['meta']['SIM_NON1a'])])
 
 if __name__ == "__main__":
   main(sys.argv[1:])

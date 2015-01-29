@@ -80,7 +80,10 @@ if isfile("config.py"):
 for name, type, file in [
     ("CSP-2006ep", "SN Ib", join(templatedir, 'CSP-2006ep.SED')),
     ("SDSS-017548", "SN Ib", join(templatedir, 'SDSS-017548.SED')),
-    ("SDSS-000018", "SN IIP", join(templatedir, 'SDSS-000018.SED'))
+    ("SDSS-000018", "SN IIP", join(templatedir, 'SDSS-000018.SED')),
+    ("SDSS-004012", "SN Ic", join(templatedir, 'SDSS-004012.SED')),
+    ("CSP-2004fe", "SN Ic", join(templatedir, 'CSP-2004fe.SED')),
+    ("SDSS-018457", "SN IIP", join(templatedir, 'SDSS-018457.SED'))
     ]:
   phase, wave, flux = sncosmo.io.read_griddata_ascii(file)
   min = np.min(wave)
