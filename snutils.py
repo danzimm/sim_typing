@@ -21,7 +21,7 @@ def open_sim_fits(dir):
   filterdir = [f for f in listdir(dir) if not isfile(join(dir, f)) and f.lower().endswith('.filters')][0]
   banddir = join(dir, filterdir)
   for name in ['g', 'r', 'i', 'z']:
-    filename = os.path.join(banddir, name + '.dat')
+    filename = join(banddir, name + '.dat')
     band = sncosmo.read_bandpass(filename, name=name)
     sncosmo.registry.register(band)
   meta = hdrfits[1].data
