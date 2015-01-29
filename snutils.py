@@ -3,6 +3,7 @@ import numpy as np
 from os.path import isfile, join, splitext
 from os import listdir
 from astropy.io import fits
+import sncosmo
 
 def load_summary(file):
   return [int(sn) for sn in np.genfromtxt(file, usecols=(2), dtype=None)]
