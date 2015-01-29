@@ -234,7 +234,8 @@ def main(args):
   snids = [snid for snid, val in lowprobs.iteritems()]
   for snid in snids:
     result = [dat for dat in data if int(dat['meta']['SNID']) == int(snid)][0]
-    plot_lc(snid, directory, False, "figures/{}.png".format(snid), result, [lowprobs[snid]['ordered'][0][0], SNANAidx_to_model(lowprobs[snid]['meta']['SIM_NON1a'])])
+    print "{} with {} - {} and {} - {}".format(lowprobs[snid]['correct'], lowprobs[snid]['ordered'][0][0], SNANAidx_to_model(lowprobs[snid]['meta']['SIM_NON1a']), type_for_name(lowprobs[snid]['ordered'][0][0]), lowprobs[snid]['meta']['SIM_TYPE_NAME'])
+    #plot_lc(snid, directory, False, "figures/{}.png".format(snid), result, [lowprobs[snid]['ordered'][0][0], SNANAidx_to_model(lowprobs[snid]['meta']['SIM_NON1a'])])
 
 if __name__ == "__main__":
   main(sys.argv[1:])

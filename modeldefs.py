@@ -73,17 +73,20 @@ for name, sntype in [('s11-2004hx', 'SN IIL/P'),
 
 templatedir = '/fusion/gpfs/home/kuhlmann/snana/root_v201204/snsed/non1a/'
 
-if isfile("config.py"):
+if isfile('config.py'):
   from config import config
   templatedir = os.path.expanduser(config['templateDirectory']) if 'templateDirectory' in config else templatedir
 
+customTemplates = []
+
 for name, type, file in [
-    ("CSP-2006ep", "SN Ib", join(templatedir, 'CSP-2006ep.SED')),
-    ("SDSS-017548", "SN Ib", join(templatedir, 'SDSS-017548.SED')),
-    ("SDSS-000018", "SN IIP", join(templatedir, 'SDSS-000018.SED')),
-    ("SDSS-004012", "SN Ic", join(templatedir, 'SDSS-004012.SED')),
-    ("CSP-2004fe", "SN Ic", join(templatedir, 'CSP-2004fe.SED')),
-    ("SDSS-018457", "SN IIP", join(templatedir, 'SDSS-018457.SED'))
+    ('CSP-2006ep', 'SN Ib', join(templatedir, 'CSP-2006ep.SED')),
+    ('SDSS-017548', 'SN Ic', join(templatedir, 'SDSS-017548.SED')),
+    ('SDSS-000018', 'SN IIP', join(templatedir, 'SDSS-000018.SED')),
+    ('SDSS-004012', 'SN Ic', join(templatedir, 'SDSS-004012.SED')),
+    ('CSP-2004fe', 'SN Ic', join(templatedir, 'CSP-2004fe.SED')),
+    ('SDSS-018457', 'SN IIP', join(templatedir, 'SDSS-018457.SED')),
+    ('SDSS-014492', 'SN Ib', join(templatedir, 'SDSS-014492.SED'))
     ]:
   phase, wave, flux = sncosmo.io.read_griddata_ascii(file)
   min = np.min(wave)
@@ -125,4 +128,5 @@ for name, type, file in [
                   'param_names': ['z', 't0', 'amplitude', 'hostebv'], # print out these params from pickle
                   'bounds': bounds,
                   'tied': tied}
+  customTemplates.append(name)
  
