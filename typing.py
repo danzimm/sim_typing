@@ -126,11 +126,14 @@ def histodata(data, xl, yl, show, outname):
   else:
     plt.savefig(outname, dpi=300)
 
-def filter_probabilities(probs, corrects, incorrects, greater, cutoff):
+def filter_probabilities(probs, corrects, incorrects, greater, cutoff, condition=None):
   cutter = (lambda x: x >= cutoff) if greater else (lambda y: y <= cutoff)
+  subcutter = condition if condition is not None else (lambda bundle: True)
   retval = {}
   for snid, prob in probs.iteritems():
     if not cutter(prob['ordered'][0][1] - prob['ordered'][1][1]):
+      continue
+    if not subcutter(prob):
       continue
     if prob['correct'] and corrects:
       retval[snid] = prob
@@ -197,6 +200,14 @@ def plot_lc(snid, directory, show, outname, result, mms):
   else:
     fig.savefig(outname, dpi=300)
 
+def plot_lcs(probs, data, figuresDirectory, directory):
+  if not os.path.exists(figuresDirectory):
+    os.mkdir(figuresDirectory)
+  snids = [snid for snid, val in probs.iteritems()]
+  for snid in snids:
+    result = [dat for dat in data if int(dat['meta']['SNID']) == int(snid)][0]
+    plot_lc(snid, directory, False, join(figuresDirectory, str(snid) + '.png'), result, [probs[snid]['ordered'][0][0], SNANAidx_to_model(probs[snid]['meta']['SIM_NON1a'])])
+
 def main(args):
   include_special = True
   show = False
@@ -218,7 +229,7 @@ def main(args):
   outname = opts.out[0]
   data = load_data()
   chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect = analyze_data(data, include_special)
-  lowprobs = filter_probabilities(probs, False, True, True, 0.1)
+  lowprobs = filter_probabilities(probs, False, True, True, 0.1, condition=lambda bundle: bundle['meta']['SIM_NON1a'] == 104)
 
   #plot_types(lowestchisqdofs, show, outname)
   #plot_types(lowestcorrect, show, outname)
@@ -229,12 +240,8 @@ def main(args):
   #histo_probdiff(lowprobs, show, outname)
   #print "Probability info for SN with false typing with diff > 50%:"
   #print_prob_info(lowprobs)
-  if not os.path.exists("figures"):
-    os.mkdir("figures")
-  snids = [snid for snid, val in lowprobs.iteritems()]
-  for snid in snids:
-    result = [dat for dat in data if int(dat['meta']['SNID']) == int(snid)][0]
-    plot_lc(snid, directory, False, "figures/{}.png".format(snid), result, [lowprobs[snid]['ordered'][0][0], SNANAidx_to_model(lowprobs[snid]['meta']['SIM_NON1a'])])
+  #print len(lowprobs)
+  plot_lcs(lowprobs, data, 'CSP-2006epfigures', directory)
 
 if __name__ == "__main__":
   main(sys.argv[1:])
