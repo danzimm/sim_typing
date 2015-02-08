@@ -54,19 +54,25 @@ def analyze_data(data, include_specials):
                          cmp = lambda a,b: -1 if a[1] - b[1] < 0 else (0 if a[1] == b[1] else 1))
     orderedprobs = sorted([[name, prob] for name, prob in probbundle.iteritems()],
                           cmp = lambda a,b: 1 if a[1] - b[1] < 0 else (0 if a[1] == b[1] else -1))
+
     lowchi = orderedchis[0]
     realtype = meta['SIM_TYPE_NAME']
     correctlytyped = sntypes_equiv(realtype, type_for_name(lowchi[0]))
+
     chisqbundle['correct'] = probbundle['correct'] = correctlytyped
     chisqbundle['ordered'] = orderedchis
     probbundle['ordered'] = orderedprobs
     chisqbundle['meta'] = probbundle['meta'] = meta
+    chisqbundle['results'] = probbundle['results'] = results
+
     chisqdofs[meta['SNID']] = chisqbundle
     probs[meta['SNID']] = probbundle
+
     if lowchi[0] in lowestchisqdofs:
       lowestchisqdofs[lowchi[0]] += 1
     else:
       lowestchisqdofs[lowchi[0]] = 1
+
     adder = lowestcorrect if correctlytyped else lowestincorrect
     if lowchi[0] in adder:
       adder[lowchi[0]] += 1
@@ -148,9 +154,14 @@ def print_prob_info(probs):
     meta = prob['meta']
     for key in meta.array.names:
       print "\t\t\t{}: {}".format(key, meta[key])
+    print "\t\tCorrect: {}".format(prob['correct'])
+    print "\t\tOrdered: {}".format(prob['ordered'])
+    print "\t\tResults Bundle:"
+    for key, val in prob['results'].iteritems():
+      print "\t\t\t{}: {}".format(key, val)
     print "\t\tOther information:"
     for key, val in prob.iteritems():
-      if key == 'meta':
+      if key == 'meta' or key == 'correct' or key == 'ordered' or key == 'results':
         continue
       print "\t\t\t{}: {}".format(key, val)
 
@@ -162,7 +173,7 @@ def count_zero_prob(probs):
   zeros = 0
   for snid, prob in probs.iteritems():
     for key, val in prob.iteritems():
-      if key == 'meta' or key == 'correct' or key == 'ordered':
+      if key == 'meta' or key == 'correct' or key == 'ordered' or key == 'results':
         continue
       if val == 0.0:
         zeros += 1
@@ -230,6 +241,13 @@ def main(args):
   data = load_data()
   chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect = analyze_data(data, include_special)
   lowprobs = filter_probabilities(probs, False, True, True, 0.1, condition=lambda bundle: bundle['meta']['SIM_NON1a'] == 104)
+  
+  print "chisq/dof: {}".format(chisqdofs['338990']['ordered'])
+  bundle = probs['338990']
+  print bundle['ordered']
+  print "{}: {}".format(bundle['ordered'][0][0], bundle['results'][bundle['ordered'][0][0]]['param_dict'])
+  simmodel = SNANAidx_to_model(bundle['meta']['SIM_NON1a'])
+  print "{}: {}".format(simmodel, bundle['results'][simmodel]['param_dict'])
 
   #plot_types(lowestchisqdofs, show, outname)
   #plot_types(lowestcorrect, show, outname)
@@ -240,8 +258,9 @@ def main(args):
   #histo_probdiff(lowprobs, show, outname)
   #print "Probability info for SN with false typing with diff > 50%:"
   #print_prob_info(lowprobs)
+  #print_prob_info(specialprobs)
   #print len(lowprobs)
-  plot_lcs(lowprobs, data, 'CSP-2006epfigures', directory)
+  #plot_lcs(lowprobs, data, 'CSP-2006epfigures', directory)
 
 if __name__ == "__main__":
   main(sys.argv[1:])
