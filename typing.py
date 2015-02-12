@@ -154,6 +154,7 @@ def print_prob_info(probs):
     meta = prob['meta']
     for key in meta.array.names:
       print "\t\t\t{}: {}".format(key, meta[key])
+    """
     print "\t\tCorrect: {}".format(prob['correct'])
     print "\t\tOrdered: {}".format(prob['ordered'])
     print "\t\tResults Bundle:"
@@ -164,6 +165,7 @@ def print_prob_info(probs):
       if key == 'meta' or key == 'correct' or key == 'ordered' or key == 'results':
         continue
       print "\t\t\t{}: {}".format(key, val)
+    """
 
 def print_snids(datas):
   for snid, val, in datas.iteritems():
@@ -242,12 +244,14 @@ def main(args):
   chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect = analyze_data(data, include_special)
   lowprobs = filter_probabilities(probs, False, True, True, 0.1, condition=lambda bundle: bundle['meta']['SIM_NON1a'] == 104)
   
+  """
   print "chisq/dof: {}".format(chisqdofs['338990']['ordered'])
   bundle = probs['338990']
   print bundle['ordered']
   print "{}: {}".format(bundle['ordered'][0][0], bundle['results'][bundle['ordered'][0][0]]['param_dict'])
   simmodel = SNANAidx_to_model(bundle['meta']['SIM_NON1a'])
   print "{}: {}".format(simmodel, bundle['results'][simmodel]['param_dict'])
+  """
 
   #plot_types(lowestchisqdofs, show, outname)
   #plot_types(lowestcorrect, show, outname)
@@ -257,8 +261,7 @@ def main(args):
   #histo_probdiff(probs, show, outname)
   #histo_probdiff(lowprobs, show, outname)
   #print "Probability info for SN with false typing with diff > 50%:"
-  #print_prob_info(lowprobs)
-  #print_prob_info(specialprobs)
+  print_prob_info(lowprobs)
   #print len(lowprobs)
   #plot_lcs(lowprobs, data, 'CSP-2006epfigures', directory)
 
