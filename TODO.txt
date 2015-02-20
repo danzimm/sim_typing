@@ -1,5 +1,4 @@
 
-on astro2 create script with this supernova with CSP-2006ep/salt2-extended
 create plots for eve (with parameters from the simulation):
   SIM_PEAKMJD = t0
   SIM_REDSHIFT_CMB = z
