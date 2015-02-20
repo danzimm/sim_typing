@@ -190,6 +190,7 @@ def load_snid_data(snid, directory):
 def plot_lc(snid, directory, show, outname, result, mms):
   bestname = mms[0]
   ms = [m for m in mms if m in models] # used to eliminate errors
+  specialm = ms[1] # this is the model name of the model that was used to simulate the SN
   print "Plotting {} on {}{}".format(ms, snid, (" instead of " + str(mms) + " because the required models aren't loaded" if len(mms) != len(ms) else ""))
   mods = [(m, models[m]['model']) for m in ms]
   dat = load_snid_data(snid, directory)
@@ -202,11 +203,16 @@ def plot_lc(snid, directory, show, outname, result, mms):
   data['zp'] = 27.5
   data['zpsys'] = 'ab'
   for m, mod in mods:
-    res = result[m]
-    mod.set(**res['param_dict'])
-    idx = np.argmax(res['logl'])
-    parameters = res['samples'][idx]
-    mod.set(**dict(zip(res['param_names'], parameters)))
+    if m == specialm:
+      res = result[m]
+      param_dict = {'hostebv': res['param_dict']['hostebv'], 'z': result['meta']['SIM_REDSHIFT_CMB'], 'mwebv': result['meta']['SIM_MWEBV'], 't0': result['meta']['SIM_PEAKMJD'], 'amplitude': -18.004560 + 0.6}
+      #print "{} ({}): {}".format(snid, m, param_dict) # prints info about this simulated param_dict
+      mod.set(**param_dict)
+    else:
+      res = result[m]
+      idx = np.argmax(res['logl'])
+      parameters = res['samples'][idx]
+      mod.set(**dict(zip(res['param_names'], parameters)))
   fig = sncosmo.plot_lc(data, [mod for m, mod in mods])
   if show:
     plt.show()
@@ -261,9 +267,9 @@ def main(args):
   #histo_probdiff(probs, show, outname)
   #histo_probdiff(lowprobs, show, outname)
   #print "Probability info for SN with false typing with diff > 50%:"
-  print_prob_info(lowprobs)
+  #print_prob_info(lowprobs)
   #print len(lowprobs)
-  #plot_lcs(lowprobs, data, 'CSP-2006epfigures', directory)
+  plot_lcs(lowprobs, data, 'figures_2', directory)
 
 if __name__ == "__main__":
   main(sys.argv[1:])
