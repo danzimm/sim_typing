@@ -9,3 +9,4 @@ config.py
 *.list
 .DS_Store
 *figures*
+*.bk

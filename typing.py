@@ -203,16 +203,15 @@ def plot_lc(snid, directory, show, outname, result, mms):
   data['zp'] = 27.5
   data['zpsys'] = 'ab'
   for m, mod in mods:
-    if m == specialm:
+    if False and m == specialm:
       res = result[m]
-      param_dict = {'hostebv': res['param_dict']['hostebv'], 'z': result['meta']['SIM_REDSHIFT_CMB'], 'mwebv': result['meta']['SIM_MWEBV'], 't0': result['meta']['SIM_PEAKMJD'], 'amplitude': -18.004560 + 0.6}
+      param_dict = {'hostebv': res['param_dict']['hostebv'], 'z': result['meta']['SIM_REDSHIFT_CMB'], 'mwebv': result['meta']['SIM_MWEBV'], 't0': result['meta']['SIM_PEAKMJD'], 'amplitude': res['param_dict']['amplitude']}
       #print "{} ({}): {}".format(snid, m, param_dict) # prints info about this simulated param_dict
       mod.set(**param_dict)
+      #mod.set_source_peakabsmag(-18.004560 + 0.6, 'bessellr', 'ab')
     else:
       res = result[m]
-      idx = np.argmax(res['logl'])
-      parameters = res['samples'][idx]
-      mod.set(**dict(zip(res['param_names'], parameters)))
+      mod.set(**res['param_dict'])
   fig = sncosmo.plot_lc(data, [mod for m, mod in mods])
   if show:
     plt.show()
@@ -269,7 +268,7 @@ def main(args):
   #print "Probability info for SN with false typing with diff > 50%:"
   #print_prob_info(lowprobs)
   #print len(lowprobs)
-  plot_lcs(lowprobs, data, 'figures_2', directory)
+  plot_lcs(lowprobs, data, 'eve_figures_1', directory)
 
 if __name__ == "__main__":
   main(sys.argv[1:])

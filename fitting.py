@@ -6,7 +6,7 @@ from astropy.table import Table
 from astropy.io.misc import fnpickle, fnunpickle
 import sncosmo
 from modeldefs import models
-from sncosmo.fitting import _nest_lc
+from sncosmo.fitting import nest_lc
 import os
 from os.path import isfile, join
 from snutils import load_summary, open_sim_fits
@@ -73,7 +73,6 @@ def fit_and_save(metas, datas):
     dtmax = np.max(data['time'])
 
     results['meta'] = meta
-    
     for name, m in models.iteritems():
       if name in results:
         continue
@@ -84,9 +83,7 @@ def fit_and_save(metas, datas):
       t0min = dtmin - 30. + t0off
       t0max = dtmax - 30. + t0off
       m['bounds']['t0'] = (t0min, t0max)        # set t0 bounds
-      m['bounds']['z'] = (meta['REDSHIFT_FINAL'], meta['REDSHIFT_FINAL'])
-      res = _nest_lc(data, m['model'], m['param_names'], False,
-                     bounds=m['bounds'], tied=m['tied'], nobj=50, verbose=False)
+      res, model = nest_lc(data, m['model'], m['param_names'], bounds=m['bounds'], ppfs=m['ppfs'], nobj=50, verbose=False)
       res.chisq = -2. * res.loglmax
       res.chisqdof = res.chisq / res.ndof
       res.param_dict = dict(zip(m['model'].param_names,
