@@ -12,38 +12,24 @@ from collections import OrderedDict as odict
 from os.path import join, isfile
 
 models = odict()
-amplitude0 = {}
 
 # Define the dust model used everywhere.
 dust = sncosmo.F99Dust(3.1)
-
-# Create a fast function for distance modulus (used in tying absolute
-# magnitude to amplitude parameters)
-cosmo = cosmology.FlatLambdaCDM(H0=70., Om0=0.3)
-zgrid = np.linspace(0.001, 2., 400)
-dmgrid = cosmo.distmod(zgrid)
-dm = interp1d(zgrid, dmgrid)
-tomabs = Interp1D(0., 1., np.array([-16., -20.]))
 
 def add_salt2():
   model = sncosmo.Model(source='salt2-extended', effects=[dust],
                         effect_names=['mw'],
                         effect_frames=['obs'])
-  param_names = ['z', 't0', 'x0', 'x1', 'c']
-  amplitude0['salt2-extended'] = model.get('x0')
-  ppfs = {'x0': lambda amp, n='salt2-extended': amplitude0[n] * 10.**(-0.4 * (tomabssalt(amp) + dm(models[n]['model'].get('z'))))}
+  param_names = ['z', 't0', 'x1', 'c']
   bounds = {'x1': (-3., 3.),
             'c': (-0.3, 0.3),
-            'z': (0.001, 1.2),
-            'mabs':(-17.5, -20.)}
-  tomabssalt = Interp1D(0., 1., np.array([-16., -20.]))
+            'z': (0.001, 1.2)}
   model.source.set_peakmag(0., 'bessellb', 'ab')
   models['salt2-extended'] = {'type': 'SN Ia',
                               'mprior': 0.5,
                               'model': model,
                               'param_names': param_names,
-                              'bounds': bounds,
-                              'ppfs': ppfs}
+                              'bounds': bounds}
 
 def add_builtin():
   for name, sntype in [('s11-2004hx', 'SN IIL/P'),
@@ -59,8 +45,6 @@ def add_builtin():
                           effect_names=['host', 'mw'],
                           effect_frames=['rest', 'obs'])
 
-    amplitude0[name] = model.get('amplitude')
-    ppfs = {'amplitude': lambda amp, n=name: amplitude0[n] * 10**(-0.4 * (tomabs(amp) + dm(models[n]['model'].get('z'))))}
     bounds = {'hostebv': (-0.2, 0.5)}
 
     model.source.set_peakmag(0., 'bessellb', 'ab')
@@ -68,9 +52,8 @@ def add_builtin():
     models[name] = {'type': sntype,
                     'mprior': 0.5/8.,
                     'model': model,
-                    'param_names': ['t0', 'amplitude', 'hostebv'], # print out these params from pickle
-                    'bounds': bounds,
-                    'ppfs': ppfs}
+                    'param_names': ['t0', 'hostebv'], # print out these params from pickle
+                    'bounds': bounds}
 
 
 def add_others():
@@ -117,8 +100,6 @@ def add_others():
                           effect_names=['host', 'mw'],
                           effect_frames=['rest', 'obs'])
 
-    amplitude0[name] = model.get('amplitude')
-    ppfs = {'amplitude': lambda amp, n=name: amplitude0[n] * 10**(-0.4 * (tomabs(amp) + dm(models[n]['model'].get('z'))))}
     bounds = {'hostebv': (-0.2, 0.5)}
 
     model.source.set_peakmag(0., 'bessellb', 'ab')
@@ -126,9 +107,8 @@ def add_others():
     models[name] = {'type': type,
                     'mprior': 0.5/8.,
                     'model': model,
-                    'param_names': ['t0', 'amplitude', 'hostebv'], # print out these params from pickle
-                    'bounds': bounds,
-                    'ppfs': ppfs}
+                    'param_names': ['t0', 'hostebv'], # print out these params from pickle
+                    'bounds': bounds}
     customTemplates.append(name)
  
 add_salt2()

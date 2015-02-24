@@ -83,7 +83,7 @@ def fit_and_save(metas, datas):
       t0min = dtmin - 30. + t0off
       t0max = dtmax - 30. + t0off
       m['bounds']['t0'] = (t0min, t0max)        # set t0 bounds
-      res, model = nest_lc(data, m['model'], m['param_names'], bounds=m['bounds'], ppfs=m['ppfs'], nobj=50, verbose=False)
+      res, model = nest_lc(data, m['model'], m['param_names'], bounds=m['bounds'], guess_amplitude_bound=True, nobj=50)
       res.chisq = -2. * res.loglmax
       res.chisqdof = res.chisq / res.ndof
       res.param_dict = dict(zip(m['model'].param_names,
