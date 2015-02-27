@@ -20,10 +20,9 @@ def add_salt2():
   model = sncosmo.Model(source='salt2-extended', effects=[dust],
                         effect_names=['mw'],
                         effect_frames=['obs'])
-  param_names = ['z', 't0', 'x1', 'c']
+  param_names = ['t0', 'x1', 'c']
   bounds = {'x1': (-3., 3.),
-            'c': (-0.3, 0.3),
-            'z': (0.001, 1.2)}
+            'c': (-0.3, 0.3)}
   model.source.set_peakmag(0., 'bessellb', 'ab')
   models['salt2-extended'] = {'type': 'SN Ia',
                               'mprior': 0.5,
