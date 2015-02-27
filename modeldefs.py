@@ -20,7 +20,7 @@ def add_salt2():
   model = sncosmo.Model(source='salt2-extended', effects=[dust],
                         effect_names=['mw'],
                         effect_frames=['obs'])
-  param_names = ['t0', 'x1', 'c']
+  param_names = ['t0', 'x1', 'c', 'x0']
   bounds = {'x1': (-3., 3.),
             'c': (-0.3, 0.3)}
   model.source.set_peakmag(0., 'bessellb', 'ab')
@@ -51,7 +51,7 @@ def add_builtin():
     models[name] = {'type': sntype,
                     'mprior': 0.5/8.,
                     'model': model,
-                    'param_names': ['t0', 'hostebv'], # print out these params from pickle
+                    'param_names': ['t0', 'hostebv', 'amplitude'], # print out these params from pickle
                     'bounds': bounds}
 
 
@@ -106,7 +106,7 @@ def add_others():
     models[name] = {'type': type,
                     'mprior': 0.5/8.,
                     'model': model,
-                    'param_names': ['t0', 'hostebv'], # print out these params from pickle
+                    'param_names': ['t0', 'hostebv', 'amplitude'], # print out these params from pickle
                     'bounds': bounds}
     customTemplates.append(name)
  
