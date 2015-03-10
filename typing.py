@@ -244,6 +244,7 @@ def plot_corner(prob, figuresDirectory):
   fig.savefig(join(figuresDirectory, str(snid) + '.png'))
 
 def main(args):
+  global _cacheDirectory
 
   show = False
   outname = 'out.png'
