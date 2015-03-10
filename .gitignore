@@ -10,3 +10,4 @@ config.py
 .DS_Store
 *figures*
 *.bk
+nestnobj*.txt
