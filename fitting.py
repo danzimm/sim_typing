@@ -6,7 +6,7 @@ from astropy.table import Table
 from astropy.io.misc import fnpickle, fnunpickle
 import sncosmo
 from modeldefs import models
-from sncosmo.fitting import nest_lc
+from sncosmo.fitting import nest_lc, mcmc_lc
 import os
 from os.path import isfile, join
 from snutils import load_summary, open_sim_fits
@@ -83,15 +83,24 @@ def fit_and_save(metas, datas):
       t0min = dtmin - 30. + t0off
       t0max = dtmax - 30. + t0off
       m['bounds']['t0'] = (t0min, t0max)        # set t0 bounds
-      res, model = nest_lc(data, m['model'], m['param_names'], bounds=m['bounds'], guess_amplitude_bound=True, nobj=50)
-      res.chisq = -2. * res.loglmax
-      res.chisqdof = res.chisq / res.ndof
-      res.param_dict = dict(zip(m['model'].param_names,
-                                  m['model'].parameters))
-      res.param_names = m['model'].param_names
-      res.mprior = m['mprior']
-      res.type = m['type']
-      results[name] = res
+      if True:
+        res, modd = nest_lc(data, m['model'], m['param_names'], bounds=m['bounds'], guess_amplitude_bound=True, nobj=50)
+        res.chisq = -2. * res.loglmax
+        res.chisqdof = res.chisq / res.ndof
+        res.param_dict = dict(zip(modd.param_names,
+                                  modd.parameters))
+        res.param_names = modd.param_names
+        res.mprior = m['mprior']
+        res.type = m['type']
+        results[name] = res
+      else:
+        res, modd = mcmc_lc(data, m['model'], m['param_names'], bounds=m['bounds'], guess_amplitude=True)
+        res.param_dict = dict(zip(modd.param_names,
+                                  modd.parameters))
+        res.param_names = modd.param_names
+        res.mprior = m['mprior']
+        res.type = m['type']
+        results[name] = res
     
     fnpickle(results, pikname)
 
@@ -104,6 +113,7 @@ def main(args):
   summary = os.path.expanduser(conf['summary']) if 'summary' in conf else 'PassAllCuts500.summary'
   fro = -1
   to = -1
+  specificsnid = None
   directory = os.path.expanduser(conf['fitsDirectory']) if 'fitsDirectory' in conf else '/home/kuhlmann/snana/root_v201204/SIM/DES_5years_CC_v1033f/'
   if 'cacheDirectory' in conf:
     _cacheDirectory = os.path.expanduser(conf['cacheDirectory'])
@@ -113,6 +123,7 @@ def main(args):
   parser.add_argument('-t', '--to', type=int, nargs=1, help="to where")
   parser.add_argument('-s', '--summary', nargs=1, help="location of .summary file to consult")
   parser.add_argument('-d', '--dir', nargs=1, help="directory of the FITS files to analyze")
+  parser.add_argument('-n', '--snid', nargs=1, help="specify a certain SNID to fit")
   opts = parser.parse_args(args)
   if opts.fro is not None:
     fro = opts.fro[0]
@@ -122,8 +133,13 @@ def main(args):
     directory = opts.dir[0]
   if opts.summary is not None:
     summary = opts.summary[0]
+  if opts.snid is not None:
+    specificsnid = opts.snid[0]
   meta, data = open_sim_fits(directory)
-  meta = filter_meta(meta, fro, to, summary)
+  if specificsnid is not None:
+    meta = [m for m in meta if int(m['SNID']) == int(specificsnid)]
+  else:
+    meta = filter_meta(meta, fro, to, summary)
   if not os.path.exists(_cacheDirectory):
     os.makedirs(_cacheDirectory)
   fit_and_save(meta, data)

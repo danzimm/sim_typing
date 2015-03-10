@@ -55,14 +55,14 @@ def add_builtin():
                     'bounds': bounds}
 
 
+customTemplates = []
 def add_others():
+  global customTemplates
   templatedir = '/fusion/gpfs/home/kuhlmann/snana/root_v201204/snsed/non1a/'
 
   if isfile('config.py'):
     from config import config
     templatedir = os.path.expanduser(config['templateDirectory']) if 'templateDirectory' in config else templatedir
-
-  customTemplates = []
 
   for name, type, file in [
       ('CSP-2006ep', 'SN Ib', join(templatedir, 'CSP-2006ep.SED')),

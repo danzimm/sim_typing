@@ -14,6 +14,7 @@ from astropy.io import fits
 import sncosmo
 from astropy.table import Table
 from snutils import open_sim_fits
+from triangle import corner
 
 _cacheDirectory = "./.cache"
 
@@ -154,18 +155,18 @@ def print_prob_info(probs):
     meta = prob['meta']
     for key in meta.array.names:
       print "\t\t\t{}: {}".format(key, meta[key])
-    """
     print "\t\tCorrect: {}".format(prob['correct'])
     print "\t\tOrdered: {}".format(prob['ordered'])
+    """
     print "\t\tResults Bundle:"
     for key, val in prob['results'].iteritems():
       print "\t\t\t{}: {}".format(key, val)
+    """
     print "\t\tOther information:"
     for key, val in prob.iteritems():
       if key == 'meta' or key == 'correct' or key == 'ordered' or key == 'results':
         continue
       print "\t\t\t{}: {}".format(key, val)
-    """
 
 def print_snids(datas):
   for snid, val, in datas.iteritems():
@@ -203,12 +204,10 @@ def plot_lc(snid, directory, show, outname, result, mms):
   data['zp'] = 27.5
   data['zpsys'] = 'ab'
   for m, mod in mods:
-    if False and m == specialm:
+    if m == specialm:
       res = result[m]
       param_dict = {'hostebv': res['param_dict']['hostebv'], 'z': result['meta']['SIM_REDSHIFT_CMB'], 'mwebv': result['meta']['SIM_MWEBV'], 't0': result['meta']['SIM_PEAKMJD'], 'amplitude': res['param_dict']['amplitude']}
-      #print "{} ({}): {}".format(snid, m, param_dict) # prints info about this simulated param_dict
       mod.set(**param_dict)
-      #mod.set_source_peakabsmag(-18.004560 + 0.6, 'bessellr', 'ab')
     else:
       res = result[m]
       mod.set(**res['param_dict'])
@@ -226,8 +225,26 @@ def plot_lcs(probs, data, figuresDirectory, directory):
     result = [dat for dat in data if int(dat['meta']['SNID']) == int(snid)][0]
     plot_lc(snid, directory, False, join(figuresDirectory, str(snid) + '.png'), result, [probs[snid]['ordered'][0][0], SNANAidx_to_model(probs[snid]['meta']['SIM_NON1a'])])
 
+def plot_corner(prob, figuresDirectory):
+  if not os.path.exists(figuresDirectory):
+    os.mkdir(figuresDirectory)
+  #model = prob['ordered'][0][0]
+  model = SNANAidx_to_model(prob['meta']['SIM_NON1a'])
+  result = prob['results'][model]
+  snid = prob['meta']['SNID']
+  weights = result['weights']
+  if np.max(weights) >= 0.9999999999:
+    print "Failed to create corner plots for {} - max(weights) >= 0.9999999999".format(snid)
+    return
+  samples = result['samples']
+  param_names = result['vparam_names'] # this will break when ran with data created by sncosmo.__version__ < 1
+  extents = len(param_names) * [0.9999999999]
+  nbins = 15
+  fig = corner(samples, labels=param_names, weights=weights, extents=extents, bins=nbins)
+  fig.savefig(join(figuresDirectory, str(snid) + '.png'))
+
 def main(args):
-  include_special = True
+
   show = False
   outname = 'out.png'
   
@@ -236,6 +253,7 @@ def main(args):
     from config import config
     conf = config
   directory = os.path.expanduser(conf['fitsDirectory']) if 'fitsDirectory' in conf else '/home/kuhlmann/snana/root_v201204/SIM/DES_5years_CC_v1033f/'
+  _cacheDirectory = conf['cacheDirectory'] if 'cacheDirectory' in conf else _cacheDirectory
 
   parser = argparse.ArgumentParser(description='Analyze SN Data Simulated from SNANA and fit with SNCosmo')
   parser.add_argument('-x', '--extra', action='store_const', const=False, default=True, help="exclude extra templates in analysis")
@@ -248,28 +266,12 @@ def main(args):
   data = load_data()
   chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect = analyze_data(data, include_special)
   lowprobs = filter_probabilities(probs, False, True, True, 0.1, condition=lambda bundle: bundle['meta']['SIM_NON1a'] == 104)
+
+  aprob = {snid: p for snid, p in probs.iteritems() if int(snid) == 338990}
+  #print_prob_info(aprob)
+  plot_corner([p for snid, p in aprob.iteritems()][0], 'corner_figures')
+  #plot_lcs(aprob, data, 'mcmc_figures', directory)
   
-  """
-  print "chisq/dof: {}".format(chisqdofs['338990']['ordered'])
-  bundle = probs['338990']
-  print bundle['ordered']
-  print "{}: {}".format(bundle['ordered'][0][0], bundle['results'][bundle['ordered'][0][0]]['param_dict'])
-  simmodel = SNANAidx_to_model(bundle['meta']['SIM_NON1a'])
-  print "{}: {}".format(simmodel, bundle['results'][simmodel]['param_dict'])
-  """
-
-  #plot_types(lowestchisqdofs, show, outname)
-  #plot_types(lowestcorrect, show, outname)
-  #plot_types(lowestincorrect, show, outname)
-  #histo_probs(probs, show, outname)
-  #histo_chisqdiff(chisqdofs, show, outname)
-  #histo_probdiff(probs, show, outname)
-  #histo_probdiff(lowprobs, show, outname)
-  #print "Probability info for SN with false typing with diff > 50%:"
-  #print_prob_info(lowprobs)
-  #print len(lowprobs)
-  plot_lcs(lowprobs, data, 'eve_figures_1', directory)
-
 if __name__ == "__main__":
   main(sys.argv[1:])
 
