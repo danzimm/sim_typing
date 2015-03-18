@@ -17,6 +17,7 @@ from snutils import open_sim_fits
 from triangle import corner
 
 _cacheDirectory = "./.cache"
+_isMCMC = False
 
 def chisqdof_to_prob(chisq, dof):
   return 1 - stats.chi2.cdf(chisq, dof)
@@ -41,44 +42,45 @@ def analyze_data(data, include_specials):
     meta = results['meta']
     chisqbundle = {}
     probbundle = {}
-    for name, result in results.iteritems():
-      if name == 'meta':
-        continue
-      chisq = result['chisq']
-      dof = result['ndof']
-      chisqdof = result['chisqdof']
-      prob = chisqdof_to_prob(chisq, dof)
-      chisqbundle[name] = chisqdof
-      probbundle[name] = prob
+    if not _isMCMC:
+      for name, result in results.iteritems():
+        if name == 'meta':
+          continue
+        chisq = result['chisq']
+        dof = result['ndof']
+        chisqdof = result['chisqdof']
+        prob = chisqdof_to_prob(chisq, dof)
+        chisqbundle[name] = chisqdof
+        probbundle[name] = prob
 
-    orderedchis = sorted([[name, chisqdof] for name, chisqdof in chisqbundle.iteritems()],
-                         cmp = lambda a,b: -1 if a[1] - b[1] < 0 else (0 if a[1] == b[1] else 1))
-    orderedprobs = sorted([[name, prob] for name, prob in probbundle.iteritems()],
-                          cmp = lambda a,b: 1 if a[1] - b[1] < 0 else (0 if a[1] == b[1] else -1))
+      orderedchis = sorted([[name, chisqdof] for name, chisqdof in chisqbundle.iteritems()],
+                           cmp = lambda a,b: -1 if a[1] - b[1] < 0 else (0 if a[1] == b[1] else 1))
+      orderedprobs = sorted([[name, prob] for name, prob in probbundle.iteritems()],
+                            cmp = lambda a,b: 1 if a[1] - b[1] < 0 else (0 if a[1] == b[1] else -1))
 
-    lowchi = orderedchis[0]
-    realtype = meta['SIM_TYPE_NAME']
-    correctlytyped = sntypes_equiv(realtype, type_for_name(lowchi[0]))
+      lowchi = orderedchis[0]
+      realtype = meta['SIM_TYPE_NAME']
+      correctlytyped = sntypes_equiv(realtype, type_for_name(lowchi[0]))
 
-    chisqbundle['correct'] = probbundle['correct'] = correctlytyped
-    chisqbundle['ordered'] = orderedchis
-    probbundle['ordered'] = orderedprobs
+      chisqbundle['correct'] = probbundle['correct'] = correctlytyped
+      chisqbundle['ordered'] = orderedchis
+      probbundle['ordered'] = orderedprobs
+
+      if lowchi[0] in lowestchisqdofs:
+        lowestchisqdofs[lowchi[0]] += 1
+      else:
+        lowestchisqdofs[lowchi[0]] = 1
+
+      adder = lowestcorrect if correctlytyped else lowestincorrect
+      if lowchi[0] in adder:
+        adder[lowchi[0]] += 1
+      else:
+        adder[lowchi[0]] = 1
+
     chisqbundle['meta'] = probbundle['meta'] = meta
     chisqbundle['results'] = probbundle['results'] = results
-
     chisqdofs[meta['SNID']] = chisqbundle
     probs[meta['SNID']] = probbundle
-
-    if lowchi[0] in lowestchisqdofs:
-      lowestchisqdofs[lowchi[0]] += 1
-    else:
-      lowestchisqdofs[lowchi[0]] = 1
-
-    adder = lowestcorrect if correctlytyped else lowestincorrect
-    if lowchi[0] in adder:
-      adder[lowchi[0]] += 1
-    else:
-      adder[lowchi[0]] = 1
 
   return chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect
 
@@ -232,15 +234,20 @@ def plot_corner(prob, figuresDirectory):
   model = SNANAidx_to_model(prob['meta']['SIM_NON1a'])
   result = prob['results'][model]
   snid = prob['meta']['SNID']
-  weights = result['weights']
-  if np.max(weights) >= 0.9999999999:
-    print "Failed to create corner plots for {} - max(weights) >= 0.9999999999".format(snid)
-    return
+  if not _isMCMC:
+    weights = result['weights']
+    if np.max(weights) >= 0.9999999999:
+      print "Failed to create corner plots for {} - max(weights) >= 0.9999999999".format(snid)
+      return
   samples = result['samples']
   param_names = result['vparam_names'] # this will break when ran with data created by sncosmo.__version__ < 1
   extents = len(param_names) * [0.9999999999]
   nbins = 15
-  fig = corner(samples, labels=param_names, weights=weights, extents=extents, bins=nbins)
+  if not _isMCMC:
+    fig = corner(samples, labels=param_names, weights=weights, extents=extents, bins=nbins)
+  else:
+    fig = corner(samples, labels=param_names, extents=extents, bins=nbins)
+
   fig.savefig(join(figuresDirectory, str(snid) + '.png'))
 
 def main(args):
@@ -255,7 +262,7 @@ def main(args):
     conf = config
   directory = os.path.expanduser(conf['fitsDirectory']) if 'fitsDirectory' in conf else '/home/kuhlmann/snana/root_v201204/SIM/DES_5years_CC_v1033f/'
   _cacheDirectory = conf['cacheDirectory'] if 'cacheDirectory' in conf else _cacheDirectory
-
+  
   parser = argparse.ArgumentParser(description='Analyze SN Data Simulated from SNANA and fit with SNCosmo')
   parser.add_argument('-x', '--extra', action='store_const', const=False, default=True, help="exclude extra templates in analysis")
   parser.add_argument('-s', '--show', action='store_const', const=True, default=False, help="show plot instead of saving")
@@ -266,12 +273,13 @@ def main(args):
   outname = opts.out[0]
   data = load_data()
   chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect = analyze_data(data, include_special)
-  lowprobs = filter_probabilities(probs, False, True, True, 0.1, condition=lambda bundle: bundle['meta']['SIM_NON1a'] == 104)
+  #lowprobs = filter_probabilities(probs, False, True, True, 0.1, condition=lambda bundle: bundle['meta']['SIM_NON1a'] == 104)
 
   aprob = {snid: p for snid, p in probs.iteritems() if int(snid) == 338990}
   #print_prob_info(aprob)
-  plot_corner([p for snid, p in aprob.iteritems()][0], 'corner_figures')
+  plot_corner([p for snid, p in aprob.iteritems()][0], 'corner_figuresmcmc')
   #plot_lcs(aprob, data, 'mcmc_figures', directory)
+
   
 if __name__ == "__main__":
   main(sys.argv[1:])
