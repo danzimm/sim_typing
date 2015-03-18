@@ -234,6 +234,7 @@ def plot_corner(prob, figuresDirectory):
   model = SNANAidx_to_model(prob['meta']['SIM_NON1a'])
   result = prob['results'][model]
   snid = prob['meta']['SNID']
+  weights = None
   if not _isMCMC:
     weights = result['weights']
     if np.max(weights) >= 0.9999999999:
