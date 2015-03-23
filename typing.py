@@ -248,14 +248,14 @@ def plot_corner(prob, figuresDirectory, model, tag=None):
   else:
     fig = corner(samples, labels=param_names, extents=extents, bins=nbins)
 
-  fig.savefig(join(figuresDirectory, str(snid) + (tag if tag + '.png' != None else '.png')))
+  fig.savefig(join(figuresDirectory, str(snid) + (tag + '.png' if tag != None else '.png')))
 
 def plot_corners(prob, figuresDirectory):
   if not os.path.exists(figuresDirectory):
     os.mkdir(figuresDirectory)
   for pair in prob['ordered']:
     model = pair[0]
-    plot_corner(prob, figuresDirectory, model, model + '_' + str(pair[1]))
+    plot_corner(prob, figuresDirectory, model, '_' + model + '_' + str(pair[1]))
 
 def main(args):
   global _cacheDirectory
