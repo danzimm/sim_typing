@@ -227,11 +227,10 @@ def plot_lcs(probs, data, figuresDirectory, directory):
     result = [dat for dat in data if int(dat['meta']['SNID']) == int(snid)][0]
     plot_lc(snid, directory, False, join(figuresDirectory, str(snid) + '.png'), result, [probs[snid]['ordered'][0][0], SNANAidx_to_model(probs[snid]['meta']['SIM_NON1a'])])
 
-def plot_corner(prob, figuresDirectory):
+def plot_corner(prob, figuresDirectory, model, tag=None):
   if not os.path.exists(figuresDirectory):
     os.mkdir(figuresDirectory)
   #model = prob['ordered'][0][0]
-  model = SNANAidx_to_model(prob['meta']['SIM_NON1a'])
   result = prob['results'][model]
   snid = prob['meta']['SNID']
   weights = None
@@ -249,7 +248,14 @@ def plot_corner(prob, figuresDirectory):
   else:
     fig = corner(samples, labels=param_names, extents=extents, bins=nbins)
 
-  fig.savefig(join(figuresDirectory, str(snid) + '.png'))
+  fig.savefig(join(figuresDirectory, str(snid) + (tag if tag + '.png' != None else '.png')))
+
+def plot_corners(prob, figuresDirectory):
+  if not os.path.exists(figuresDirectory):
+    os.mkdir(figuresDirectory)
+  for pair in prob['ordered']:
+    model = pair[0]
+    plot_corner(prob, figuresDirectory, model, model + '_' + str(pair[1]))
 
 def main(args):
   global _cacheDirectory
@@ -278,7 +284,7 @@ def main(args):
 
   aprob = {snid: p for snid, p in probs.iteritems() if int(snid) == 338990}
   #print_prob_info(aprob)
-  plot_corner([p for snid, p in aprob.iteritems()][0], 'corner_figuresmcmc')
+  plot_corners([p for snid, p in aprob.iteritems()][0], 'corner_figures')
   #plot_lcs(aprob, data, 'mcmc_figures', directory)
 
   
