@@ -12,6 +12,7 @@ from os.path import isfile, join
 from snutils import load_summary, open_sim_fits
 
 _cacheDirectory = './.cache'
+_isMCMC = False
 
 def filter_meta(meta, fro, to, summary):
   snids = load_summary(summary)
@@ -24,6 +25,7 @@ def filter_meta(meta, fro, to, summary):
   return metas
 
 def fit_and_save(metas, datas):
+  global _cacheDirectory, _isMCMC
   model = sncosmo.Model(source='salt2-extended',
                         effects=[sncosmo.F99Dust()],
                         effect_names=['mw'],
@@ -84,7 +86,7 @@ def fit_and_save(metas, datas):
       t0max = dtmax - 30. + t0off
       m['bounds']['t0'] = (t0min, t0max)        # set t0 bounds
       m['bounds']['z'] = (meta['REDSHIFT_FINAL'] - 0.01, meta['REDSHIFT_FINAL'] + 0.01)
-      if True:
+      if _isMCMC:
         res, modd = nest_lc(data, m['model'], m['param_names'], bounds=m['bounds'], guess_amplitude_bound=True, nobj=50)
         res.chisq = -2. * res.loglmax
         res.chisqdof = res.chisq / res.ndof
@@ -106,7 +108,7 @@ def fit_and_save(metas, datas):
     fnpickle(results, pikname)
 
 def main(args):
-  global _cacheDirectory
+  global _cacheDirectory, _isMCMC
   conf = {}
   if isfile('config.py'):
     from config import config
@@ -118,6 +120,8 @@ def main(args):
   directory = os.path.expanduser(conf['fitsDirectory']) if 'fitsDirectory' in conf else '/home/kuhlmann/snana/root_v201204/SIM/DES_5years_CC_v1033f/'
   if 'cacheDirectory' in conf:
     _cacheDirectory = os.path.expanduser(conf['cacheDirectory'])
+  if 'mcmc' in conf:
+    _isMCMC = conf['mcmc']
 
   parser = argparse.ArgumentParser(description='Analyze SN Data Simulated from SNANA')
   parser.add_argument('-f', '--fro', type=int, nargs=1, help="from where")

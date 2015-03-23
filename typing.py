@@ -269,6 +269,7 @@ def main(args):
     conf = config
   directory = os.path.expanduser(conf['fitsDirectory']) if 'fitsDirectory' in conf else '/home/kuhlmann/snana/root_v201204/SIM/DES_5years_CC_v1033f/'
   _cacheDirectory = conf['cacheDirectory'] if 'cacheDirectory' in conf else _cacheDirectory
+  _isMCMC = conf['mcmc'] if 'mcmc' in conf else _isMCMC
   
   parser = argparse.ArgumentParser(description='Analyze SN Data Simulated from SNANA and fit with SNCosmo')
   parser.add_argument('-x', '--extra', action='store_const', const=False, default=True, help="exclude extra templates in analysis")
