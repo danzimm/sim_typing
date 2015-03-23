@@ -86,7 +86,7 @@ def fit_and_save(metas, datas):
       t0max = dtmax - 30. + t0off
       m['bounds']['t0'] = (t0min, t0max)        # set t0 bounds
       m['bounds']['z'] = (meta['REDSHIFT_FINAL'] - 0.01, meta['REDSHIFT_FINAL'] + 0.01)
-      if _isMCMC:
+      if not _isMCMC:
         res, modd = nest_lc(data, m['model'], m['param_names'], bounds=m['bounds'], guess_amplitude_bound=True, nobj=50)
         res.chisq = -2. * res.loglmax
         res.chisqdof = res.chisq / res.ndof
@@ -97,7 +97,7 @@ def fit_and_save(metas, datas):
         res.type = m['type']
         results[name] = res
       else:
-        res, modd = mcmc_lc(data, m['model'], m['param_names'], bounds=m['bounds'], guess_amplitude=True)
+        res, modd = mcmc_lc(data, m['model'], m['param_names'], bounds=m['bounds'], guess_amplitude=True, nsamples=10000)
         res.param_dict = dict(zip(modd.param_names,
                                   modd.parameters))
         res.param_names = modd.param_names

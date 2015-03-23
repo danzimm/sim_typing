@@ -279,14 +279,15 @@ def main(args):
   include_special = opts.extra
   show = opts.show
   outname = opts.out[0]
+  dirout = outname if not outname.endswith('.png') else 'figures'
   data = load_data()
   chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect = analyze_data(data, include_special)
   #lowprobs = filter_probabilities(probs, False, True, True, 0.1, condition=lambda bundle: bundle['meta']['SIM_NON1a'] == 104)
 
   aprob = {snid: p for snid, p in probs.iteritems() if int(snid) == 338990}
   #print_prob_info(aprob)
-  plot_corners([p for snid, p in aprob.iteritems()][0], 'corner_figures')
-  #plot_lcs(aprob, data, 'mcmc_figures', directory)
+  plot_corners([p for snid, p in aprob.iteritems()][0], dirout)
+  #plot_lcs(aprob, data, dirout, directory)
 
   
 if __name__ == "__main__":
