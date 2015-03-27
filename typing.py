@@ -253,12 +253,17 @@ def plot_corner(prob, figuresDirectory, model, tag=None):
 def plot_corners(prob, figuresDirectory):
   if not os.path.exists(figuresDirectory):
     os.mkdir(figuresDirectory)
-  for pair in prob['ordered']:
-    model = pair[0]
-    plot_corner(prob, figuresDirectory, model, '_' + model + '_' + str(pair[1]))
+  if not _isMCMC:
+    for pair in prob['ordered']:
+      model = pair[0]
+      plot_corner(prob, figuresDirectory, model, '_' + model + '_' + str(pair[1]))
+  else:
+    for model in prob['results'].keys():
+      if model != 'meta':
+        plot_corner(prob, figuresDirectory, model, '_' + model)
 
 def main(args):
-  global _cacheDirectory
+  global _cacheDirectory, _isMCMC
 
   show = False
   outname = 'out.png'
