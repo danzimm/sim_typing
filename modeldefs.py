@@ -44,6 +44,7 @@ def add_builtin():
                           effect_names=['host', 'mw'],
                           effect_frames=['rest', 'obs'])
 
+    #print "time series for {} min phase: {}".format(name, model.source.minphase())
     bounds = {'hostebv': (-0.2, 0.5)}
 
     model.source.set_peakmag(0., 'bessellb', 'ab')
@@ -74,6 +75,7 @@ def add_others():
       ('SDSS-014492', 'SN Ib', join(templatedir, 'SDSS-014492.SED'))
       ]:
     phase, wave, flux = sncosmo.io.read_griddata_ascii(file)
+    # investigate why minphase is negative for some of these???
     min = np.min(wave)
     max = np.max(wave)
     if min > 1000:
@@ -94,6 +96,7 @@ def add_others():
       flux = np.array(newflux)
 
     timeSeries = sncosmo.TimeSeriesSource(phase, wave, flux)
+    #print "time series for {} min phase: {}".format(name, timeSeries.minphase())
     model = sncosmo.Model(source=timeSeries,
                           effects=[dust, dust],
                           effect_names=['host', 'mw'],

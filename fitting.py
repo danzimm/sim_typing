@@ -82,8 +82,11 @@ def fit_and_save(metas, datas):
       m['model'].set(z=meta['REDSHIFT_FINAL'])      # set model redshift to host specz
       m['model'].set(mwebv=meta['MWEBV'])                 # set mwebv of model.
       t0off = m['model'].get('t0') - m['model'].mintime() # t0 offset from mintime
-      t0min = dtmin - 30. + t0off
-      t0max = dtmax - 30. + t0off
+      #t0min = dtmin - 30. + t0off # usuaully - 30, made 30 to debug!!
+      #t0max = dtmax - 30. + t0off
+      #print "\tt0 bounds: {} minus {} = {} - ({}, {}) - ({}, {})".format(m['model'].get('t0'), m['model'].mintime(), t0off, dtmin, dtmax, t0min, t0max)
+      t0min = dtmin
+      t0max = dtmax
       m['bounds']['t0'] = (t0min, t0max)        # set t0 bounds
       m['bounds']['z'] = (meta['REDSHIFT_FINAL'] - 0.01, meta['REDSHIFT_FINAL'] + 0.01)
       if not _isMCMC:

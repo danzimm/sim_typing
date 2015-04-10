@@ -1,5 +1,4 @@
 *.log
-.cache*
 figures
 *.pyc
 *.summary
@@ -11,3 +10,4 @@ config.py
 *figures*
 *.bk
 nestnobj*.txt
+.*cache*
