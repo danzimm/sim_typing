@@ -1,8 +1,0 @@
-
-create plots for eve (with parameters from the simulation):
-  SIM_PEAKMJD = t0
-  SIM_REDSHIFT_CMB = z
-  SIM_MWEBV = mwebv
-  absmag = Ibmag = -18.004560 + 0.6
-  ignore hostebv
-
