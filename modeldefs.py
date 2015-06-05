@@ -65,15 +65,19 @@ def add_others():
     from config import config
     templatedir = os.path.expanduser(config['templateDirectory']) if 'templateDirectory' in config else templatedir
 
-  for name, type, file in [
-      ('CSP-2006ep', 'SN Ib', join(templatedir, 'CSP-2006ep.SED')),
-      ('SDSS-017548', 'SN Ic', join(templatedir, 'SDSS-017548.SED')),
-      ('SDSS-000018', 'SN IIP', join(templatedir, 'SDSS-000018.SED')),
-      ('SDSS-004012', 'SN Ic', join(templatedir, 'SDSS-004012.SED')),
-      ('CSP-2004fe', 'SN Ic', join(templatedir, 'CSP-2004fe.SED')),
-      ('SDSS-018457', 'SN IIP', join(templatedir, 'SDSS-018457.SED')),
-      ('SDSS-014492', 'SN Ib', join(templatedir, 'SDSS-014492.SED'))
+  # comments are 'is this builtin?'
+  for name, type in [
+      ('CSP-2006ep', 'SN Ib'), # n
+      ('SDSS-017548', 'SN Ic'), # n
+      # 2004hx
+      #('SDSS-000018', 'SN IIP'), 
+      ('SDSS-004012', 'SN Ic'), # n
+      ('CSP-2004fe', 'SN Ic'), # n
+      ('SDSS-018457', 'SN IIP') # n
+      # 2006jo
+      #('SDSS-014492', 'SN Ib')
       ]:
+    file = join(templatedir, name + '.SED')
     phase, wave, flux = sncosmo.io.read_griddata_ascii(file)
     # investigate why minphase is negative for some of these???
     min = np.min(wave)
