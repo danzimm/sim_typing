@@ -38,7 +38,7 @@ def make(nnodes, ncores, pbsfile, cmdlist, workingDirectory, logDirectory, cache
   
   f = open(pbsfile, 'w')
   command = 'mpirun -n {} minions < {}'.format(ncomm, join(workingDirectory, cmdlist))
-  f.write("""#!/bin/sh
+  f.write("""#!/bin/bash
 #PBS -N {}
 #PBS -A {}
 #PBS -q shared
