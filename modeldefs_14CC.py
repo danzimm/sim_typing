@@ -71,6 +71,7 @@ def add_others():
       ('SDSS-004012', 'SN Ic'),
       ('CSP-2004fe', 'SN Ic'),
       ('SDSS-018457', 'SN IIP'),
+      ('Nugent+Scolnic_IIL', 'SN IIL'),
       ]:
     file = join(templatedir, name + '.SED')
     phase, wave, flux = sncosmo.io.read_griddata_ascii(file)

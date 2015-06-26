@@ -289,11 +289,11 @@ def main(args):
   chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect = analyze_data(data, include_special)
   #lowprobs = filter_probabilities(probs, False, True, True, 0.1, condition=lambda bundle: bundle['meta']['SIM_NON1a'] == 104)
 
-  #aprob = {snid: p for snid, p in probs.iteritems() if int(snid) == 338990}
-  #print_prob_info(aprob)
+  aprob = {snid: p for snid, p in probs.iteritems() if int(snid) == 338990}
+  print_prob_info(aprob)
   #plot_corners([p for snid, p in aprob.iteritems()][0], dirout)
   #plot_lcs(aprob, data, dirout, directory)
-  plot_types(lowestchisqdofs, show, outname)
+  #plot_types(lowestchisqdofs, show, outname)
 
   
 if __name__ == "__main__":
