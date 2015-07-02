@@ -4,7 +4,7 @@ from scipy import stats
 from os import listdir
 from os.path import join, isfile
 from astropy.io.misc import fnunpickle
-from modeldefs import models
+#from modeldefs import models
 import argparse
 from modelmap import *
 import matplotlib.pyplot as plt
@@ -18,6 +18,7 @@ from triangle import corner
 
 _cacheDirectory = "./.cache"
 _isMCMC = False
+models = []
 
 def chisqdof_to_prob(chisq, dof):
   return 1 - stats.chi2.cdf(chisq, dof)
@@ -263,7 +264,7 @@ def plot_corners(prob, figuresDirectory):
         plot_corner(prob, figuresDirectory, model, '_' + model)
 
 def main(args):
-  global _cacheDirectory, _isMCMC
+  global _cacheDirectory, _isMCMC, models
 
   show = False
   outname = 'out.png'
@@ -280,11 +281,15 @@ def main(args):
   parser.add_argument('-x', '--extra', action='store_const', const=False, default=True, help="exclude extra templates in analysis")
   parser.add_argument('-s', '--show', action='store_const', const=True, default=False, help="show plot instead of saving")
   parser.add_argument('-o', '--out', nargs=1, default='out.png', help='name of png to create')
+  parser.add_argument('-m', '--modeldefs', nargs=1, help="specify which modeldefs file to use")
   opts = parser.parse_args(args)
   include_special = opts.extra
   show = opts.show
   outname = opts.out[0]
   dirout = outname if not outname.endswith('.png') else 'figures'
+  modeldefsfile = 'modeldefs' + ('' if opts.modelsdefs is None else '_' + opts.modeldefs[0])
+  tmpmodels = __import__(modeldefsfile, globals(), locals(), ["models"], -1)
+  models = tmpmodels.models
   data = load_data()
   chisqdofs, probs, lowestchisqdofs, lowestcorrect, lowestincorrect = analyze_data(data, include_special)
   #lowprobs = filter_probabilities(probs, False, True, True, 0.1, condition=lambda bundle: bundle['meta']['SIM_NON1a'] == 104)

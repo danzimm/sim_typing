@@ -5,7 +5,7 @@ import numpy as np
 from astropy.table import Table
 from astropy.io.misc import fnpickle, fnunpickle
 import sncosmo
-from modeldefs import models
+#from modeldefs import models
 from sncosmo.fitting import nest_lc, mcmc_lc
 import os
 from os.path import isfile, join
@@ -13,6 +13,7 @@ from snutils import load_summary, open_sim_fits
 
 _cacheDirectory = './.cache'
 _isMCMC = False
+models = []
 
 def filter_meta(meta, fro, to, summary):
   snids = load_summary(summary)
@@ -25,7 +26,7 @@ def filter_meta(meta, fro, to, summary):
   return metas
 
 def fit_and_save(metas, datas):
-  global _cacheDirectory, _isMCMC
+  global _cacheDirectory, _isMCMC, models
   model = sncosmo.Model(source='salt2-extended',
                         effects=[sncosmo.F99Dust()],
                         effect_names=['mw'],
@@ -111,7 +112,7 @@ def fit_and_save(metas, datas):
     fnpickle(results, pikname)
 
 def main(args):
-  global _cacheDirectory, _isMCMC
+  global _cacheDirectory, _isMCMC, models
   conf = {}
   if isfile('config.py'):
     from config import config
@@ -125,6 +126,7 @@ def main(args):
     _cacheDirectory = os.path.expanduser(conf['cacheDirectory'])
   if 'mcmc' in conf:
     _isMCMC = conf['mcmc']
+  modeldefsfile = 'modeldefs'
 
   parser = argparse.ArgumentParser(description='Analyze SN Data Simulated from SNANA')
   parser.add_argument('-f', '--fro', type=int, nargs=1, help="from where")
@@ -132,6 +134,7 @@ def main(args):
   parser.add_argument('-s', '--summary', nargs=1, help="location of .summary file to consult")
   parser.add_argument('-d', '--dir', nargs=1, help="directory of the FITS files to analyze")
   parser.add_argument('-n', '--snid', nargs=1, help="specify a certain SNID to fit")
+  parser.add_argument('-m', '--modeldefs', nargs=1, help="specify which modeldefs file to use")
   opts = parser.parse_args(args)
   if opts.fro is not None:
     fro = opts.fro[0]
@@ -143,6 +146,10 @@ def main(args):
     summary = opts.summary[0]
   if opts.snid is not None:
     specificsnid = opts.snid[0]
+  if opts.modeldefs is not None:
+    modeldefsfile = modeldefsfile + "_" + str(opts.modeldefs[0])
+  tmpmodels = __import__(modeldefsfile, globals(), locals(), ["models"], -1)
+  models = tmpmodels.models
   meta, data = open_sim_fits(directory)
   if specificsnid is not None:
     meta = [m for m in meta if int(m['SNID']) == int(specificsnid)]
