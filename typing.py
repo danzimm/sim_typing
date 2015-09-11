@@ -287,7 +287,8 @@ def main(args):
   show = opts.show
   outname = opts.out[0]
   dirout = outname if not outname.endswith('.png') else 'figures'
-  modeldefsfile = 'modeldefs' + ('' if opts.modelsdefs is None else '_' + opts.modeldefs[0])
+  modelmap_initialize_modeldefs(None if opts.modeldefs is None else opts.modeldefs[0])
+  modeldefsfile = 'modeldefs' + ('' if opts.modeldefs is None else '_' + opts.modeldefs[0])
   tmpmodels = __import__(modeldefsfile, globals(), locals(), ["models"], -1)
   models = tmpmodels.models
   data = load_data()

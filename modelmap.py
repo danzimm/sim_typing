@@ -1,5 +1,6 @@
 
-from modeldefs import models, customTemplates
+models = []
+customTemplates = []
 
 def type_for_name(name):
   return models[name]['type']
@@ -59,4 +60,11 @@ def SNANAidx_to_model(idx):
   if idx in SNANAidxTable:
     return SNANAidxTable[idx]
   return ""
+
+def modelmap_initialize_modeldefs(tag=None):
+  global models, customTemplates
+  modeldefsfile = 'modeldefs' + ('' if tag is None else '_' + tag)
+  modeldefs = __import__(modeldefsfile, globals(), locals(), ["models", "customTemplates"], -1)
+  models = modeldefs.models
+  customTemplates = modeldefs.customTemplates
 

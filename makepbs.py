@@ -26,7 +26,7 @@ def make(nnodes, ncores, pbsfile, cmdlist, workingDirectory, logDirectory, cache
     if nleft > 0:
       nleft -= 1
       ni += 1
-    f.write('{} -f {} -t {} 2>&1 | tee {}/output_{}-{}.log\n'.format(join(workingDirectory, scriptName), current, current + ni, join(workingDirectory, logDirectory), current, current + ni))
+    f.write('{} -m 45CC_Final -f {} -t {} 2>&1 | tee {}/output_{}-{}.log\n'.format(join(workingDirectory, scriptName), current, current + ni, join(workingDirectory, logDirectory), current, current + ni))
     current += ni
 
   f.close()
@@ -41,7 +41,7 @@ def make(nnodes, ncores, pbsfile, cmdlist, workingDirectory, logDirectory, cache
   f.write("""#!/bin/sh
 #PBS -N {}
 #PBS -A {}
-#PBS -q shared
+
 #PBS -m bea
 #PBS -l walltime={}
 #PBS -l {}
